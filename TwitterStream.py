@@ -57,6 +57,6 @@ con = Connection()
 pprint.pprint(con._user_twitter.get_user_timeline(exclude_replies=True, include_rts=True, trim_user=True, count=10000)[158]['id'])
 print(len(con._user_twitter.get_user_timeline(exclude_replies=True, include_rts=True, trim_user=True, count=10000)))
 
-#con.download_tweets()
+con.download_tweets()
 
 
