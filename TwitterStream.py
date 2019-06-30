@@ -1,62 +1,63 @@
-import twython as tw
+from twython import TwythonStreamer
 import json
-import pprint
+from time import time
 
+import GLOBALS
 import KEYS
 
-# twitter = tw.Twython(KEYS.CONSUMER_KEY, KEYS.CONSUMER_SECRET,
-#                      KEYS.ACCESS_TOKEN, KEYS.ACCESS_TOKEN_SECRET)
+
+class TwitterStreamer(TwythonStreamer):
+
+    _lang = None
+    _timestamp = None
+    _count = None
+    _limit = None
+
+    def __init__(self, lang='en', limit=100):
+        super().__init__(KEYS.CONSUMER_KEY, KEYS.CONSUMER_SECRET, KEYS.ACCESS_TOKEN, KEYS.ACCESS_TOKEN_SECRET)
+        self._lang = lang
+        self._timestamp = time()
+        self._count = 0
+        self._limit = limit
+
+    # Received data
+    def on_success(self, data):
+        if data['lang'] == self._lang:
+            tweet_data = self._process_tweet(data)
+            self._save_to_json(tweet_data)
+            self._count += 1
+
+        if self._count == self._limit:
+            self.disconnect()
+
+    # Problem with the API
+    def on_error(self, status_code, data):
+        print(status_code, data)
+        self.disconnect()
+
+    # Save each tweet to json file
+    def _save_to_json(self, tweet):
+        with open(GLOBALS.STREAM_FILE.replace('id', str(self._timestamp)), 'a') as json_file:
+            json.dump(tweet, json_file)
+            json_file.write("\n")
+
+    def _process_tweet(self, tweet):
+        d = {}
+        d['hashtags'] = [hashtag['text'] for hashtag in tweet['entities']['hashtags']]
+        d['text'] = tweet['text']
+        d['user'] = tweet['user']['screen_name']
+        d['user_loc'] = tweet['user']['location']
+        d['retweet_count'] = tweet['retweet_count']
+        d['favorite_count'] = tweet['favorite_count']
+        d['id'] = tweet['id']
+        return d
+
+# con = Connection()
 #
-# for status in twitter.search(q='pokemon')['statuses']:
-#     user = status['user']['screen_name'].encode('utf-8')
-#     text = status['text'].encode('utf-8')
-#     date = status['created_at']
-#     hashtag = status['entities']['hashtags']
-#
-#     print(user, ':', text, date, hashtag)
+# con.download_tweets()
 
 
-class Connection:
-
-    _user_twitter = None
-    _public_twitter = None
-    _user_info_dict = None
-
-    def __init__(self, user_info=False):
-
-        self._user_twitter = tw.Twython(KEYS.CONSUMER_KEY, KEYS.CONSUMER_SECRET,
-                                        KEYS.ACCESS_TOKEN, KEYS.ACCESS_TOKEN_SECRET)
-        self._public_twitter = tw.Twython(KEYS.CONSUMER_KEY, KEYS.CONSUMER_SECRET)
-
-        self._user_dict = self._user_twitter.verify_credentials() if user_info else None
-
-    def search_tweet(self):
-        pass
-
-    def download_tweets(self):
-        tweets_json = self._get_all_tweets()
-
-        file = open("user_tweets.json", "w")
-        # magic happens here to make it pretty-printed
-        pprint.pprint(tweets_json, file)
-        # for tweet in tweets_json:
-        #     file.write(json.dumps(json.loads(str(tweet))), indent=4, sort_keys=True)
-        file.close()
-
-    def _get_all_tweets(self, since_id=None):
-        tweets_json = con._user_twitter.get_user_timeline(exclude_replies=True, include_rts=True, trim_user=True,
-                                                          count=200, since_id=since_id)
-        num_tweets = len(tweets_json)
-        if num_tweets == 0:
-            return tweets_json
-        else:
-            last_id = tweets_json[num_tweets - 1]['id']
-            return self._get_all_tweets(since_id=last_id) + tweets_json
-
-con = Connection()
-pprint.pprint(con._user_twitter.get_user_timeline(exclude_replies=True, include_rts=True, trim_user=True, count=10000)[158]['id'])
-print(len(con._user_twitter.get_user_timeline(exclude_replies=True, include_rts=True, trim_user=True, count=10000)))
-
-con.download_tweets()
+streamer = TwitterStreamer(limit=5)
+streamer.statuses.streamer()
 
 
