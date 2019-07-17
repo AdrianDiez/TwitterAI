@@ -39,12 +39,12 @@ class Connection:
 ## TODO Add functionality to check global and local trends per user.
 ## TODO Create class json_parser to extract the json information into table
 
+
+
 con = Connection()
 
-
-
 print(con._public_twitter.get_place_trends(id=1))
-#con.download_tweets()
+
 
 
 

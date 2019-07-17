@@ -3,3 +3,6 @@ KEYS/__init__.py
 KEYS/__pycache__/__init__.cpython-37.pyc
 .DS_Store
 *.xml
+*.json
+__pycache__/TwitterStreamThread.cpython-37.pyc
+GLOBALS/__pycache__/__init__.cpython-37.pyc
