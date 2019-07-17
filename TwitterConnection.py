@@ -20,22 +20,21 @@ class Connection:
         self._user_dict = self._user_twitter.verify_credentials() if user_info else None
 
     def download_tweets(self):
-        tweets_json = self._get_all_tweets()
+        tweets_json = self._get_all_tweets(user=self._user_twitter)
 
         file = open(GLOBALS.FILE, "w")
 
         file.write(json.dumps(tweets_json, indent=4, sort_keys=True))
         file.close()
 
-    def _get_all_tweets(self, since_id=None, user=_user_twitter):
-        tweets_json = user.get_user_timeline(exclude_replies=True, include_rts=True, trim_user=True,
-                                                          count=200, since_id=since_id)
+    def _get_all_tweets(self, user, max_id=None):
+        tweets_json = user.get_user_timeline(exclude_replies=True, include_rts=True, trim_user=True, max_id=max_id)
         num_tweets = len(tweets_json)
         if num_tweets == 0:
             return tweets_json
         else:
             last_id = tweets_json[num_tweets - 1]['id']
-            return self._get_all_tweets(since_id=last_id) + tweets_json
+            return self._get_all_tweets(user=user, max_id=last_id) + tweets_json
 
 ## TODO Add functionality to check global and local trends per user.
 ## TODO Create class json_parser to extract the json information into table
@@ -45,3 +44,8 @@ con = Connection()
 
 
 print(con._public_twitter.get_place_trends(id=1))
+#con.download_tweets()
+
+
+
+
